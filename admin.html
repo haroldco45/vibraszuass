@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin | Vibras Zuass!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <h1 class="text-3xl font-black text-orange-600 mb-6">Panel Maestro Zuass!</h1>
+
+    <div class="bg-white p-6 rounded-3xl shadow-xl mb-8 border-t-8 border-orange-500">
+        <h2 class="text-xl font-bold mb-4">➕ Agregar Nuevo Plato</h2>
+        <div class="grid gap-4">
+            <input id="prod-nombre" type="text" placeholder="Nombre del plato (ej: Picada)" class="p-3 border rounded-xl outline-none">
+            <input id="prod-precio" type="number" placeholder="Precio (solo números)" class="p-3 border rounded-xl outline-none">
+            <input id="prod-desc" type="text" placeholder="Descripción breve" class="p-3 border rounded-xl outline-none">
+            <select id="prod-restaurante" class="p-3 border rounded-xl outline-none bg-white">
+                <option value="Restaurante Central">Restaurante Central</option>
+                <option value="Pizzería Zuass">Pizzería Zuass</option>
+            </select>
+            <button onclick="guardarProducto()" class="bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">
+                GUARDAR EN LA APP ✅
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-xl">
+        <h2 class="text-xl font-bold mb-4">📋 Platos en la App</h2>
+        <div id="lista-admin" class="grid gap-3"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
+            authDomain: "vibraszuass.firebaseapp.com",
+            projectId: "vibraszuass",
+            storageBucket: "vibraszuass.firebasestorage.app",
+            messagingSenderId: "441433261428",
+            appId: "1:441433261428:web:f418c47d4352cb28a59821",
+            databaseURL: "https://vibraszuass-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // FUNCIÓN PARA GUARDAR
+        window.guardarProducto = function() {
+            const nombre = document.getElementById('prod-nombre').value;
+            const precio = document.getElementById('prod-precio').value;
+            const desc = document.getElementById('prod-desc').value;
+            const rest = document.getElementById('prod-restaurante').value;
+
+            if(nombre && precio) {
+                const prodRef = ref(db, 'productos');
+                const nuevoProdRef = push(prodRef);
+                set(nuevoProdRef, { nombre, precio, desc, rest });
+                alert("¡Plato subido a Vibras Zuass!");
+                location.reload();
+            }
+        };
+
+        // LISTAR Y ELIMINAR
+        onValue(ref(db, 'productos'), (snapshot) => {
+            const data = snapshot.val();
+            const listado = document.getElementById('lista-admin');
+            listado.innerHTML = "";
+            for(let id in data) {
+                listado.innerHTML += `
+                    <div class="flex justify-between items-center p-3 border-b">
+                        <div>
+                            <p class="font-bold">${data[id].nombre} - $${data[id].precio}</p>
+                            <p class="text-xs text-gray-500">${data[id].rest}</p>
+                        </div>
+                        <button onclick="borrar('${id}')" class="text-red-500 font-bold text-xs">ELIMINAR</button>
+                    </div>
+                `;
+            }
+        });
+        window.borrar = (id) => remove(ref(db, `productos/${id}`));
+    </script>
+    <footer class="mt-10 text-center text-[10px] text-gray-400">
+        App desarrollada por Vibras Positivas derechos de autor (3117700431)
+    </footer>
+</body>
+</html>
