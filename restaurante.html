@@ -1,1 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Restaurante | Vibras Zuass</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white p-4">
+    <h1 class="text-2xl font-bold mb-6 text-orange-400 underline">Pedidos Entrantes Zuass!</h1>
+    
+    <div id="contenedor-pedidos" class="grid gap-4">
+        </div>
 
+    <script type="module" src="app.js"></script>
+    <script type="module">
+        window.escucharPedidos((pedidos) => {
+            const lista = document.getElementById('contenedor-pedidos');
+            lista.innerHTML = "";
+            for(let id in pedidos) {
+                const p = pedidos[id];
+                if(p.estado === "pendiente") {
+                    lista.innerHTML += `
+                        <div class="bg-slate-800 p-4 rounded-lg border-l-4 border-orange-500">
+                            <p class="font-bold text-lg">${p.items[0].nombre}...</p>
+                            <p class="text-orange-300">Total: $${p.total}</p>
+                            <p class="text-xs text-gray-400">${p.fecha}</p>
+                            <button onclick="window.cambiarEstadoPedido('${id}', 'preparando')" class="mt-2 bg-green-600 px-4 py-1 rounded text-sm">Aceptar Pedido</button>
+                        </div>
+                    `;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
