@@ -3,42 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibras Zuass! | Cliente</title>
+    <title>Vibras Zuass! | Menú en Vivo v3</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-    <header class="p-4 bg-white shadow-sm flex justify-between items-center">
-        <h1 class="text-orange-500 font-bold text-xl">Vibras Zuass!</h1>
-        <span id="contador" class="bg-orange-500 text-white px-2 rounded-full">0</span>
+<body class="bg-gray-100 pb-24 text-gray-800">
+    <header class="p-4 bg-white shadow-sm flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-orange-500 font-black text-2xl italic">Vibras Zuass!</h1>
+        <span id="contador" class="bg-orange-500 text-white px-3 py-1 rounded-full font-bold">0</span>
     </header>
 
     <div class="p-4">
-        <div class="bg-white p-4 rounded-xl shadow mb-4">
-            <h3 class="font-bold">Salchipapa Especial</h3>
-            <p class="text-gray-500 text-sm">Con todo el sabor de la tierrita.</p>
-            <button onclick="agregar(15000, 'Salchipapa Especial')" class="mt-2 bg-orange-500 text-white px-4 py-2 rounded-lg w-full">Agregar $15.000</button>
+        <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl border-2 border-orange-200 mb-6 outline-none shadow-sm">
+        
+        <h2 class="text-gray-400 font-bold mb-4 uppercase text-[10px] tracking-widest">Menú del día en Caucasia:</h2>
+        
+        <div id="lista-productos" class="grid gap-4">
+            <p class="text-center text-gray-400 py-10 italic">Cargando sabores Zuass...</p>
         </div>
     </div>
 
-    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white hidden">
-        <button onclick="mandarAFirebase()" class="w-full bg-green-500 text-white py-3 rounded-xl font-bold">Pedir Zuass!</button>
+    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-md hidden border-t border-gray-200 shadow-2xl">
+        <div class="flex justify-between items-center mb-4 px-2 font-bold text-xl">
+            <span>Total:</span>
+            <span id="total-precio" class="text-orange-600 font-black">$0</span>
+        </div>
+        <button onclick="lanzarPedido()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg">
+            PEDIR AHORA ✅
+        </button>
     </div>
 
-    <script type="module" src="app.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
+            authDomain: "vibraszuass.firebaseapp.com",
+            projectId: "vibraszuass",
+            storageBucket: "vibraszuass.firebasestorage.app",
+            messagingSenderId: "441433261428",
+            appId: "1:441433261428:web:f418c47d4352cb28a59821",
+            databaseURL: "https://vibraszuass-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // AQUÍ ES DONDE SUCEDE LA MAGIA: LEE TUS PRODUCTOS DEL ADMIN
+        onValue(ref(db, 'productos'), (snapshot) => {
+            const productos = snapshot.val();
+            const contenedor = document.getElementById('lista-productos');
+            contenedor.innerHTML = ""; 
+
+            if (!productos) {
+                contenedor.innerHTML = "<p class='text-center text-gray-400'>No hay platos. Agrégalos desde el Admin.</p>";
+                return;
+            }
+
+            for (let id in productos) {
+                const p = productos[id];
+                contenedor.innerHTML += `
+                    <div class="bg-white p-4 rounded-3xl shadow-sm border-l-8 border-orange-500 flex justify-between items-center">
+                        <div class="flex-1">
+                            <h3 class="font-bold text-lg">${p.nombre}</h3>
+                            <p class="text-[10px] text-blue-500 font-bold">${p.rest}</p>
+                            <p class="text-orange-600 font-black text-xl">$${p.precio}</p>
+                        </div>
+                        <button onclick="agregarLocal('${p.nombre}', ${p.precio})" class="bg-orange-500 text-white h-12 w-12 rounded-2xl font-black text-2xl shadow-lg active:scale-90">+</button>
+                    </div>
+                `;
+            }
+        });
+    </script>
+
     <script>
         let carrito = [];
         let total = 0;
-        function agregar(precio, nombre) {
+
+        window.agregarLocal = function(nombre, precio) {
             carrito.push({nombre, precio});
-            total += precio;
+            total += parseInt(precio);
             document.getElementById('contador').innerText = carrito.length;
+            document.getElementById('total-precio').innerText = `$${total}`;
             document.getElementById('btn-pedir').classList.remove('hidden');
-        }
-        function mandarAFirebase() {
-            window.enviarPedidoZuass(carrito, total);
-        }
+        };
+
+        window.lanzarPedido = function() {
+            const nom = document.getElementById('nombre-cliente').value;
+            if(!nom) return alert("Dinos tu nombre para el pedido.");
+            
+            let msg = `*Vibras Zuass!*%0ACliente: ${nom}%0A%0A`;
+            carrito.forEach(i => msg += `- ${i.nombre}%0A`);
+            msg += `%0A*Total: $${total}*`;
+            window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
+        };
     </script>
-    <footer class="mt-10 text-center text-xs text-gray-400 p-4">
+
+    <footer class="mt-20 text-center text-[10px] text-gray-400 p-4 font-bold">
         App desarrollada por Vibras Positivas derechos de autor (3117700431)
     </footer>
 </body>
