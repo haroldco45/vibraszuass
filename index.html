@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibras Zuass | Domicilios Caucasia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --vibras-color: #f39c12; } /* Color naranja vibrante */
+        .btn-zuass { background-color: var(--vibras-color); }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-orange-500">Vibras <span class="text-gray-800">Zuass!</span></h1>
+        <div class="relative">
+            <i class="fas fa-shopping-cart text-2xl text-gray-600"></i>
+            <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+        </div>
+    </header>
+
+    <section class="p-4">
+        <div class="bg-orange-100 rounded-xl p-4 border-l-4 border-orange-500">
+            <p class="text-sm text-orange-800 font-semibold">📍 ¡Lo mejor de Caucasia a tu puerta!</p>
+        </div>
+    </section>
+
+    <main class="p-4 grid grid-cols-1 gap-4" id="lista-productos">
+        <div class="bg-white rounded-lg shadow overflow-hidden flex">
+            <img src="https://via.placeholder.com/100" alt="Producto" class="w-24 h-24 object-cover">
+            <div class="p-3 flex-1">
+                <h3 class="font-bold text-gray-800">Hamburguesa Súper Zuass</h3>
+                <p class="text-xs text-gray-500">Carne, queso, ripio y salsa secreta.</p>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-orange-600 font-bold">$18.000</span>
+                    <button onclick="agregarAlCarrito('Hamburguesa Súper', 18000)" class="btn-zuass text-white px-3 py-1 rounded-full text-sm">
+                        + Agregar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="checkout-bar" class="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-2xl border-t hidden">
+        <button onclick="enviarPedido()" class="w-full btn-zuass text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2">
+            <i class="fab fa-whatsapp text-xl"></i>
+            Confirmar Pedido Zuass!
+        </button>
+    </div>
+
+    <footer class="p-8 text-center text-gray-400 text-xs">
+        <p>App desarrollada por Vibras Positivas derechos de autor (3117700431)</p>
+    </footer>
+
+    <script>
+        let carrito = [];
+        
+        function agregarAlCarrito(nombre, precio) {
+            carrito.push({nombre, precio});
+            document.getElementById('cart-count').innerText = carrito.length;
+            document.getElementById('cart-count').classList.remove('hidden');
+            document.getElementById('checkout-bar').classList.remove('hidden');
+            alert(nombre + " agregado al carrito");
+        }
+
+        function enviarPedido() {
+            let mensaje = "¡Hola Vibras Zuass! Quiero hacer un pedido:%0A";
+            let total = 0;
+            carrito.forEach(item => {
+                mensaje += `- ${item.nombre} ($${item.precio})%0A`;
+                total += item.precio;
+            });
+            mensaje += `%0A*Total: $${total}*%0A📍 Por favor, envíenmelo a: [Escribe tu dirección aquí]`;
+            
+            // Reemplaza con el número de WhatsApp central de tu negocio
+            const tel = "573117700431"; 
+            window.open(`https://wa.me/${tel}?text=${mensaje}`, '_blank');
+        }
+    </script>
+</body>
+</html>
