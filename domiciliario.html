@@ -1,19 +1,107 @@
-<div class="bg-gray-800 p-5 rounded-3xl border-2 border-orange-500 shadow-2xl">
-    <div class="flex justify-between items-center mb-4">
-        <span class="text-orange-500 font-black text-xl italic underline">NUEVO ENVÍO</span>
-        <span class="text-xs text-gray-400 font-mono">${p.fecha}</span>
-    </div>
-    <h3 class="text-white text-2xl font-bold mb-1">${p.cliente}</h3>
-    <p class="text-green-400 font-bold mb-4">COBRAR: $${p.total}</p>
-    
-    <div class="grid grid-cols-2 gap-3">
-        <a href="https://www.google.com/maps?q=${p.coords.lat},${p.coords.lng}" target="_blank" 
-           class="bg-blue-600 text-white py-4 rounded-2xl font-bold flex flex-col items-center justify-center text-xs">
-            <i class="fas fa-map-marked-alt text-xl mb-1"></i> VER RUTA
-        </a>
-        <button onclick="window.cambiarEstadoPedido('${id}', 'entregado')" 
-                class="bg-green-600 text-white py-4 rounded-2xl font-bold text-xs">
-            FINALIZAR ✅
-        </button>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domicilios Zuass! | Reparto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-white pb-20">
+
+    <header class="p-5 bg-orange-600 shadow-xl flex justify-between items-center sticky top-0 z-50">
+        <h1 class="font-black text-xl italic tracking-tighter"><i class="fas fa-motorcycle mr-2"></i>ZUASS! REPARTO</h1>
+        <span class="text-[10px] bg-black/20 px-2 py-1 rounded-full uppercase font-bold">Caucasia</span>
+    </header>
+
+    <main class="p-4">
+        <h2 class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-6">Pedidos listos para entrega:</h2>
+        
+        <div id="lista-reparto" class="grid gap-6">
+            <p class="text-center text-slate-600 py-10 italic">Esperando que el restaurante despache algo... ☕</p>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
+            authDomain: "vibraszuass.firebaseapp.com",
+            projectId: "vibraszuass",
+            storageBucket: "vibraszuass.firebasestorage.app",
+            messagingSenderId: "441433261428",
+            appId: "1:441433261428:web:f418c47d4352cb28a59821",
+            databaseURL: "https://vibraszuass-default-rtdb.firebaseio.com"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // ESCUCHAR PEDIDOS EN PREPARACIÓN
+        onValue(ref(db, 'pedidos'), (snapshot) => {
+            const pedidos = snapshot.val();
+            const contenedor = document.getElementById('lista-reparto');
+            contenedor.innerHTML = "";
+
+            let hayPedidos = false;
+
+            for (let id in pedidos) {
+                const p = pedidos[id];
+                // El domiciliario SOLO ve lo que el restaurante ya aceptó
+                if (p.estado === "preparando" || p.estado === "listo") {
+                    hayPedidos = true;
+                    contenedor.innerHTML += `
+                        <div class="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-green-500 text-black font-black text-[10px] px-4 py-1 rounded-bl-xl">DESPACHADO</div>
+                            
+                            <h3 class="text-2xl font-black text-orange-500 mb-1">${p.cliente}</h3>
+                            <p class="text-slate-400 text-sm mb-4"><i class="far fa-clock mr-1"></i> Entró a las: ${p.fecha}</p>
+                            
+                            <div class="bg-slate-900/50 p-4 rounded-2xl mb-6">
+                                <p class="text-xs text-slate-500 mb-1 uppercase font-bold">Total a cobrar:</p>
+                                <p class="text-3xl font-black text-white">$${p.total}</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="window.abrirRuta(${p.coords?.lat}, ${p.coords?.lng})" 
+                                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all">
+                                    <i class="fas fa-location-dot text-xl"></i>
+                                    <span class="text-[10px]">VER RUTA</span>
+                                </button>
+                                
+                                <button onclick="window.finalizarEntrega('${id}')" 
+                                        class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                    <span class="text-[10px]">ENTREGADO</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            if (!hayPedidos) {
+                contenedor.innerHTML = `<div class="text-center py-20 opacity-30"><i class="fas fa-box-open text-6xl mb-4"></i><p>¡Zuass! Todo entregado por ahora.</p></div>`;
+            }
+        });
+
+        // FUNCIONES GLOBALES
+        window.abrirRuta = (lat, lng) => {
+            if(!lat || !lng) return alert("El cliente no activó su GPS.");
+            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+        };
+
+        window.finalizarEntrega = (id) => {
+            if(confirm("¿Confirmas que ya entregaste el pedido y recibiste el dinero?")) {
+                update(ref(db, `pedidos/${id}`), { estado: "entregado" });
+            }
+        };
+    </script>
+
+    <footer class="mt-10 text-center text-[10px] text-slate-600 p-6 italic">
+        App desarrollada por Vibras Positivas derechos de autor (3117700431)
+    </footer>
+</body>
+</html>
