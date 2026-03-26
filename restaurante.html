@@ -3,19 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Restaurante | Vibras Zuass</title>
+    <title>Panel de Cocina | Vibras Zuass!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .bloqueo-pantalla {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 20px;
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-white p-4 pb-20">
+
+    <div id="pantalla-bloqueo" class="bloqueo-pantalla hidden">
+        <h1 class="text-orange-500 font-black text-5xl mb-4 italic">ZUASS!</h1>
+        <p class="text-xl font-bold mb-6 text-slate-300">Tu suscripción ha vencido o está inactiva.</p>
+        <a href="https://wa.me/573117700431" class="bg-green-600 px-8 py-4 rounded-2xl font-black text-lg shadow-xl shadow-green-900/20">
+            RENOVAR CON VIBRAS POSITIVAS
+        </a>
+    </div>
+
     <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-        <h1 class="text-2xl font-black text-orange-500 italic">ZUASS! <span class="text-white underline">COCINA</span></h1>
-        <div class="bg-red-600 px-3 py-1 rounded-full text-xs font-bold animate-pulse">RECIBIENDO...</div>
+        <div>
+            <h1 class="text-2xl font-black text-orange-500 italic leading-none">PEDIDOS ENTRANTES</h1>
+            <p id="nombre-tienda" class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 italic">Cargando...</p>
+        </div>
+        <div id="status-suscripcion" class="text-[9px] font-black px-3 py-1 rounded-full uppercase">Verificando...</div>
     </header>
     
-    <div id="contenedor-pedidos" class="grid gap-4">
-        <p class="text-center text-slate-500 py-20 italic">Esperando hambre de la tierrita... 🍳</p>
+    <div id="contenedor-pedidos" class="grid gap-6">
+        <div class="text-center py-20 opacity-20">
+            <i class="fas fa-circle-notch fa-spin text-5xl mb-4 text-orange-500"></i>
+            <p>Sincronizando con la nube Zuass...</p>
+        </div>
     </div>
+
+    <audio id="sonido-pedido" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3"></audio>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -34,61 +61,94 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ESCUCHAR TODOS LOS PEDIDOS "PENDIENTES"
+        // --- CONTROL INVISIBLE DE SUSCRIPCIÓN ---
+        // Extraemos el ID del restaurante de la URL (ej: restaurante.html?id=ID_DE_FIREBASE)
+        const urlParams = new URLSearchParams(window.location.search);
+        const idTienda = urlParams.get('id');
+
+        onValue(ref(db, `config/restaurantes/${idTienda}`), (snapshot) => {
+            const r = snapshot.val();
+            const bloqueo = document.getElementById('pantalla-bloqueo');
+            const statusLabel = document.getElementById('status-suscripcion');
+            const nameLabel = document.getElementById('nombre-tienda');
+
+            if (!r || r.estado !== 'activo') {
+                bloqueo.classList.remove('hidden'); // BLOQUEO TOTAL
+                statusLabel.innerText = "Suscripción Inactiva";
+                statusLabel.classList.add('bg-red-500/20', 'text-red-500');
+            } else {
+                bloqueo.classList.add('hidden'); // DESBLOQUEADO
+                statusLabel.innerText = "Servicio Activo";
+                statusLabel.classList.add('bg-green-500/20', 'text-green-500');
+                nameLabel.innerText = r.nombre;
+            }
+        });
+
+        // --- GESTIÓN DE PEDIDOS EN TIEMPO REAL ---
+        let ultimoConteo = 0;
         onValue(ref(db, 'pedidos'), (snapshot) => {
             const pedidos = snapshot.val();
             const lista = document.getElementById('contenedor-pedidos');
             lista.innerHTML = "";
             
             let hayPendientes = false;
+            let conteoActual = 0;
 
             for(let id in pedidos) {
                 const p = pedidos[id];
                 if(p.estado === "pendiente") {
                     hayPendientes = true;
-                    // Listar los productos del pedido
-                    let itemsHtml = p.items.map(i => `<li class="text-sm">• ${i.nombre}</li>`).join('');
+                    conteoActual++;
+
+                    // Listar productos
+                    let itemsHtml = p.items.map(i => `
+                        <li class="flex justify-between border-b border-slate-700/50 py-2">
+                            <span class="font-bold text-orange-400">${i.cantidad}x</span>
+                            <span class="flex-1 ml-3">${i.nombre}</span>
+                        </li>
+                    `).join('');
 
                     lista.innerHTML += `
-                        <div class="bg-slate-800 p-6 rounded-3xl border-l-8 border-orange-500 shadow-xl">
+                        <div class="bg-slate-800 p-6 rounded-[2.5rem] border-l-8 border-orange-500 shadow-2xl animate-pulse-slow">
                             <div class="flex justify-between items-start mb-4">
                                 <div>
-                                    <h3 class="font-black text-xl text-white uppercase">${p.cliente}</h3>
-                                    <p class="text-[10px] text-slate-400 font-bold tracking-widest">${p.fecha}</p>
+                                    <h3 class="font-black text-2xl uppercase tracking-tighter">${p.cliente}</h3>
+                                    <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase italic">${p.fecha}</p>
                                 </div>
-                                <span class="bg-orange-500/20 text-orange-500 px-3 py-1 rounded-lg font-black">$${p.total}</span>
+                                <span class="bg-orange-500/10 text-orange-500 px-4 py-2 rounded-2xl font-black text-xl">$${p.total}</span>
                             </div>
                             
-                            <ul class="mb-6 space-y-1 text-slate-300">
+                            <ul class="mb-6 space-y-1">
                                 ${itemsHtml}
                             </ul>
 
                             <button onclick="window.aceptarPedido('${id}')" 
-                                class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95">
-                                <i class="fas fa-check-circle mr-2"></i> ACEPTAR Y EMPEZAR
+                                class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-5 rounded-2xl shadow-xl transition-all active:scale-95 text-lg">
+                                <i class="fas fa-motorcycle mr-2"></i> DESPACHAR AHORA
                             </button>
                         </div>
                     `;
                 }
             }
 
+            // Sonar si entra pedido nuevo
+            if (conteoActual > ultimoConteo) {
+                document.getElementById('sonido-pedido').play();
+            }
+            ultimoConteo = conteoActual;
+
             if(!hayPendientes) {
                 lista.innerHTML = `<div class="text-center py-20 opacity-20"><i class="fas fa-utensils text-6xl mb-4"></i><p>Sin pedidos por ahora.</p></div>`;
             }
         });
 
-        // FUNCIÓN PARA ACEPTAR PEDIDO
         window.aceptarPedido = (id) => {
-            update(ref(db, `pedidos/${id}`), { 
-                estado: "preparando" 
-            }).then(() => {
-                console.log("Pedido aceptado. Ahora le aparecerá al domiciliario.");
-            });
+            update(ref(db, `pedidos/${id}`), { estado: "preparando" });
         };
     </script>
 
-    <footer class="mt-10 text-center text-[10px] text-slate-600 p-4">
-        App desarrollada por Vibras Positivas derechos de autor (3117700431)
+    <footer class="mt-20 text-center text-[10px] text-slate-600 font-bold uppercase tracking-[0.4em]">
+        App desarrollada por Vibras Positivas (3117700431)
     </footer>
 </body>
 </html>
