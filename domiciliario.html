@@ -3,22 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domicilios Zuass! | Reparto</title>
+    <title>Zuass! Reparto | Domiciliarios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .card-glow { box-shadow: 0 0 20px rgba(249, 115, 22, 0.1); }
+        body { background-color: #0f172a; }
+    </style>
 </head>
-<body class="bg-slate-900 text-white pb-20">
+<body class="text-slate-200 pb-24">
 
-    <header class="p-5 bg-orange-600 shadow-xl flex justify-between items-center sticky top-0 z-50">
-        <h1 class="font-black text-xl italic tracking-tighter"><i class="fas fa-motorcycle mr-2"></i>ZUASS! REPARTO</h1>
-        <span class="text-[10px] bg-black/20 px-2 py-1 rounded-full uppercase font-bold">Caucasia</span>
+    <header class="p-5 bg-orange-600 shadow-2xl flex justify-between items-center sticky top-0 z-50">
+        <div>
+            <h1 class="font-black text-xl italic tracking-tighter text-white">
+                <i class="fas fa-motorcycle mr-2"></i>ZUASS! REPARTO
+            </h1>
+            <p class="text-[10px] text-orange-200 font-bold uppercase tracking-widest">Panel de Entrega | Caucasia</p>
+        </div>
+        <div class="bg-black/20 p-2 rounded-xl text-center min-w-[60px]">
+            <span id="count-reparto" class="block text-lg font-black leading-none">0</span>
+            <span class="text-[8px] uppercase font-bold opacity-60">Viajes</span>
+        </div>
     </header>
 
     <main class="p-4">
-        <h2 class="text-slate-400 font-bold text-xs uppercase tracking-widest mb-6">Pedidos listos para entrega:</h2>
+        <div class="flex items-center gap-2 mb-6">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+            </span>
+            <h2 class="text-slate-400 font-bold text-xs uppercase tracking-widest">Pedidos para despachar:</h2>
+        </div>
         
         <div id="lista-reparto" class="grid gap-6">
-            <p class="text-center text-slate-600 py-10 italic">Esperando que el restaurante despache algo... ☕</p>
+            <div class="text-center py-20 opacity-20">
+                <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
+                <p>Sincronizando con la cocina...</p>
+            </div>
         </div>
     </main>
 
@@ -39,42 +60,69 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ESCUCHAR PEDIDOS EN PREPARACIÓN
+        // ESCUCHAR PEDIDOS QUE ESTÉN EN PREPARACIÓN O LISTOS
         onValue(ref(db, 'pedidos'), (snapshot) => {
             const pedidos = snapshot.val();
             const contenedor = document.getElementById('lista-reparto');
+            const contador = document.getElementById('count-reparto');
             contenedor.innerHTML = "";
 
-            let hayPedidos = false;
+            let totalActivos = 0;
+
+            if (!pedidos) {
+                mostrarVacio(contenedor);
+                contador.innerText = "0";
+                return;
+            }
 
             for (let id in pedidos) {
                 const p = pedidos[id];
-                // El domiciliario SOLO ve lo que el restaurante ya aceptó
+                
+                // Solo mostrar si el restaurante ya lo aceptó ("preparando")
                 if (p.estado === "preparando" || p.estado === "listo") {
-                    hayPedidos = true;
+                    totalActivos++;
+                    
+                    // Crear lista de productos
+                    const itemsText = p.items.map(i => i.nombre).join(", ");
+
                     contenedor.innerHTML += `
-                        <div class="bg-slate-800 rounded-3xl p-6 border border-slate-700 shadow-2xl relative overflow-hidden">
-                            <div class="absolute top-0 right-0 bg-green-500 text-black font-black text-[10px] px-4 py-1 rounded-bl-xl">DESPACHADO</div>
+                        <div class="bg-slate-800/50 rounded-[2.5rem] p-6 border border-slate-700/50 card-glow relative overflow-hidden backdrop-blur-sm">
+                            <div class="absolute top-0 right-0 bg-green-500 text-black font-black text-[9px] px-4 py-1.5 rounded-bl-2xl shadow-lg">
+                                LISTO PARA SALIR
+                            </div>
                             
-                            <h3 class="text-2xl font-black text-orange-500 mb-1">${p.cliente}</h3>
-                            <p class="text-slate-400 text-sm mb-4"><i class="far fa-clock mr-1"></i> Entró a las: ${p.fecha}</p>
-                            
-                            <div class="bg-slate-900/50 p-4 rounded-2xl mb-6">
-                                <p class="text-xs text-slate-500 mb-1 uppercase font-bold">Total a cobrar:</p>
-                                <p class="text-3xl font-black text-white">$${p.total}</p>
+                            <div class="mb-4">
+                                <h3 class="text-2xl font-black text-white mb-1 uppercase tracking-tight">${p.cliente}</h3>
+                                <div class="flex items-center gap-3 text-slate-400 text-[11px] font-bold italic">
+                                    <span><i class="far fa-clock mr-1 text-orange-500"></i> ${p.fecha}</span>
+                                    <span><i class="fas fa-shopping-bag mr-1 text-orange-500"></i> ${p.items.length} productos</span>
+                                </div>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-3">
+                            <p class="text-slate-300 text-xs mb-5 line-clamp-2 bg-slate-900/50 p-3 rounded-xl border border-slate-700/30">
+                                <span class="text-orange-500 font-bold uppercase text-[9px] block mb-1">Pedido:</span>
+                                ${itemsText}
+                            </p>
+                            
+                            <div class="flex items-end justify-between mb-6">
+                                <div>
+                                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Cobro Total:</p>
+                                    <p class="text-3xl font-black text-green-400 leading-none">$${p.total}</p>
+                                </div>
+                                <i class="fas fa-hand-holding-dollar text-slate-700 text-3xl"></i>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
                                 <button onclick="window.abrirRuta(${p.coords?.lat}, ${p.coords?.lng})" 
-                                        class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all">
-                                    <i class="fas fa-location-dot text-xl"></i>
-                                    <span class="text-[10px]">VER RUTA</span>
+                                        class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+                                    <i class="fas fa-location-arrow text-xl"></i>
+                                    <span class="text-[9px] uppercase tracking-wider">Ver Ruta GPS</span>
                                 </button>
                                 
                                 <button onclick="window.finalizarEntrega('${id}')" 
-                                        class="bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all">
-                                    <i class="fas fa-check-circle text-xl"></i>
-                                    <span class="text-[10px]">ENTREGADO</span>
+                                        class="bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-900/20 active:scale-95 transition-all">
+                                    <i class="fas fa-check-double text-xl"></i>
+                                    <span class="text-[9px] uppercase tracking-wider">Entregado</span>
                                 </button>
                             </div>
                         </div>
@@ -82,26 +130,47 @@
                 }
             }
 
-            if (!hayPedidos) {
-                contenedor.innerHTML = `<div class="text-center py-20 opacity-30"><i class="fas fa-box-open text-6xl mb-4"></i><p>¡Zuass! Todo entregado por ahora.</p></div>`;
-            }
+            contador.innerText = totalActivos;
+            if (totalActivos === 0) mostrarVacio(contenedor);
         });
 
-        // FUNCIONES GLOBALES
+        function mostrarVacio(contenedor) {
+            contenedor.innerHTML = `
+                <div class="text-center py-20 opacity-20">
+                    <i class="fas fa-box-open text-6xl mb-4"></i>
+                    <p class="font-bold text-sm">¡Zuass! No tienes viajes pendientes.</p>
+                </div>`;
+        }
+
+        // FUNCIONES DE CONTROL
         window.abrirRuta = (lat, lng) => {
-            if(!lat || !lng) return alert("El cliente no activó su GPS.");
-            window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+            if(!lat || !lng) {
+                return alert("¡Uy! El cliente no activó su GPS. Llama al restaurante para la dirección.");
+            }
+            // Link Profesional de Google Maps
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         };
 
         window.finalizarEntrega = (id) => {
-            if(confirm("¿Confirmas que ya entregaste el pedido y recibiste el dinero?")) {
-                update(ref(db, `pedidos/${id}`), { estado: "entregado" });
+            if(confirm("¿Ya entregaste el pedido y recibiste el pago?")) {
+                update(ref(db, `pedidos/${id}`), { 
+                    estado: "entregado" 
+                }).then(() => {
+                    alert("¡Excelente trabajo! Pedido finalizado.");
+                });
             }
         };
     </script>
 
-    <footer class="mt-10 text-center text-[10px] text-slate-600 p-6 italic">
-        App desarrollada por Vibras Positivas derechos de autor (3117700431)
+    <footer class="mt-10 text-center p-8 border-t border-slate-800">
+        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.3em] mb-2">
+            App desarrollada por Vibras Positivas derechos de autor (3117700431)
+        </p>
+        <div class="flex justify-center gap-4 opacity-30">
+            <i class="fas fa-shield-alt text-xs"></i>
+            <i class="fas fa-bolt text-xs text-orange-500"></i>
+            <i class="fas fa-map-marker-alt text-xs"></i>
+        </div>
     </footer>
 </body>
 </html>
