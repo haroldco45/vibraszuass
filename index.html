@@ -13,7 +13,7 @@
     </header>
 
     <div class="p-4">
-        <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl border-2 border-orange-200 mb-6 outline-none shadow-sm">
+        <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl border-2 border-orange-200 mb-6 outline-none shadow-sm text-lg font-bold">
         
         <h2 class="text-gray-400 font-bold mb-4 uppercase text-[10px] tracking-widest">Menú del día en Caucasia:</h2>
         
@@ -22,19 +22,19 @@
         </div>
     </div>
 
-    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-md hidden border-t border-gray-200 shadow-2xl">
+    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-md hidden border-t border-gray-200 shadow-2xl z-50">
         <div class="flex justify-between items-center mb-4 px-2 font-bold text-xl">
             <span>Total:</span>
             <span id="total-precio" class="text-orange-600 font-black">$0</span>
         </div>
-        <button onclick="lanzarPedido()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg">
+        <button onclick="lanzarPedido()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all">
             PEDIR AHORA ✅
         </button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
@@ -49,53 +49,71 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // AQUÍ ES DONDE SUCEDE LA MAGIA: LEE TUS PRODUCTOS DEL ADMIN
+        // CARGAR PRODUCTOS
         onValue(ref(db, 'productos'), (snapshot) => {
             const productos = snapshot.val();
             const contenedor = document.getElementById('lista-productos');
             contenedor.innerHTML = ""; 
-
             if (!productos) {
-                contenedor.innerHTML = "<p class='text-center text-gray-400'>No hay platos. Agrégalos desde el Admin.</p>";
+                contenedor.innerHTML = "<p class='text-center text-gray-400'>No hay platos todavía.</p>";
                 return;
             }
-
             for (let id in productos) {
                 const p = productos[id];
                 contenedor.innerHTML += `
                     <div class="bg-white p-4 rounded-3xl shadow-sm border-l-8 border-orange-500 flex justify-between items-center">
                         <div class="flex-1">
                             <h3 class="font-bold text-lg">${p.nombre}</h3>
-                            <p class="text-[10px] text-blue-500 font-bold">${p.rest}</p>
+                            <p class="text-[10px] text-blue-500 font-bold uppercase">${p.rest}</p>
                             <p class="text-orange-600 font-black text-xl">$${p.precio}</p>
                         </div>
-                        <button onclick="agregarLocal('${p.nombre}', ${p.precio})" class="bg-orange-500 text-white h-12 w-12 rounded-2xl font-black text-2xl shadow-lg active:scale-90">+</button>
+                        <button onclick="agregarLocal('${p.nombre}', ${p.precio})" class="bg-orange-500 text-white h-12 w-12 rounded-2xl font-black text-2xl shadow-lg active:scale-90 transition-all">+</button>
                     </div>
                 `;
             }
         });
+
+        // FUNCIÓN PARA ENVIAR A FIREBASE CON GPS
+        window.lanzarPedido = function() {
+            const nom = document.getElementById('nombre-cliente').value;
+            if(!nom) return alert("Vecino, dinos tu nombre para el pedido.");
+
+            // DISPARAR GPS
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+
+                const nuevoPedidoRef = push(ref(db, 'pedidos'));
+                set(nuevoPedidoRef, {
+                    cliente: nom,
+                    items: window.carrito,
+                    total: window.total,
+                    estado: "pendiente",
+                    fecha: new Date().toLocaleTimeString(),
+                    coords: { lat, lng } // <--- COORDENADAS PARA EL DOMICILIARIO
+                }).then(() => {
+                    let msg = `*Vibras Zuass!*%0ACliente: ${nom}%0A%0A`;
+                    window.carrito.forEach(i => msg += `- ${i.nombre}%0A`);
+                    msg += `%0A*Total: $${window.total}*%0A📍 Ubicación: http://google.com/maps?q=${lat},${lng}`;
+                    window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
+                });
+
+            }, (error) => {
+                alert("Para que el domiciliario llegue rápido, por favor acepta el permiso de GPS.");
+            });
+        };
     </script>
 
     <script>
-        let carrito = [];
-        let total = 0;
+        window.carrito = [];
+        window.total = 0;
 
         window.agregarLocal = function(nombre, precio) {
-            carrito.push({nombre, precio});
-            total += parseInt(precio);
-            document.getElementById('contador').innerText = carrito.length;
-            document.getElementById('total-precio').innerText = `$${total}`;
+            window.carrito.push({nombre, precio});
+            window.total += parseInt(precio);
+            document.getElementById('contador').innerText = window.carrito.length;
+            document.getElementById('total-precio').innerText = `$${window.total}`;
             document.getElementById('btn-pedir').classList.remove('hidden');
-        };
-
-        window.lanzarPedido = function() {
-            const nom = document.getElementById('nombre-cliente').value;
-            if(!nom) return alert("Dinos tu nombre para el pedido.");
-            
-            let msg = `*Vibras Zuass!*%0ACliente: ${nom}%0A%0A`;
-            carrito.forEach(i => msg += `- ${i.nombre}%0A`);
-            msg += `%0A*Total: $${total}*`;
-            window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
         };
     </script>
 
