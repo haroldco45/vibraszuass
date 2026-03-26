@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin | Vibras Zuass!</title>
+    <title>Admin Maestro | Vibras Zuass!</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -11,49 +11,46 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body class="bg-gray-100 p-4 pb-20">
+<body class="bg-gray-100 p-4 pb-20 text-gray-800">
 
     <header class="flex justify-between items-center mb-6">
         <div>
-            <h1 class="text-2xl font-black text-orange-600 italic leading-none">PANEL MAESTRO</h1>
-            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Vibras Zuass! Caucasia</p>
+            <h1 class="text-2xl font-black text-orange-600 italic leading-none">VIBRAS ZUASS!</h1>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Panel de Control Comercial</p>
         </div>
-        <div class="bg-orange-500 text-white h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200">
-            <i class="fas fa-user-shield text-xl"></i>
+        <div class="bg-orange-500 text-white h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg">
+            <i class="fas fa-crown"></i>
         </div>
     </header>
 
-    <section class="bg-white p-6 rounded-[2.5rem] shadow-xl mb-8 border-t-8 border-orange-500">
-        <h2 class="text-lg font-black mb-6 flex items-center gap-2 text-gray-800">
-            <i class="fas fa-plus-circle text-orange-500"></i> AGREGAR NUEVO PLATO
+    <section class="bg-slate-900 p-6 rounded-[2.5rem] shadow-xl mb-8 border-t-8 border-blue-500 text-white">
+        <h2 class="text-lg font-black mb-6 flex items-center gap-2">
+            <i class="fas fa-motorcycle text-blue-400"></i> REGISTRO DE REPARTIDORES
         </h2>
-        
-        <div class="grid gap-4">
-            <input id="prod-nombre" type="text" placeholder="Nombre del plato (ej: Picada)" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner text-gray-700">
-            <input id="prod-precio" type="number" placeholder="Precio (solo números)" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner text-gray-700">
-            <input id="prod-desc" type="text" placeholder="Descripción breve" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner text-gray-700">
-            
-            <div class="flex gap-2">
-                <select id="prod-restaurante" class="flex-1 p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 shadow-inner text-gray-700 font-bold">
-                    <option>Cargando restaurantes...</option>
-                </select>
-                <button onclick="window.agregarNuevoRestaurante()" class="bg-orange-100 p-4 rounded-2xl text-orange-600 hover:bg-orange-500 hover:text-white transition-all shadow-sm">
-                    <i class="fas fa-store text-xl"></i>
-                </button>
-            </div>
-
-            <button onclick="window.guardarProducto()" class="bg-orange-600 hover:bg-orange-500 text-white font-black py-5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-all text-lg mt-2">
-                GUARDAR EN LA APP ✅
+        <div class="grid gap-3">
+            <input id="rep-nombre" type="text" placeholder="Nombre del Repartidor" class="p-4 bg-slate-800 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 shadow-inner text-white">
+            <input id="rep-placa" type="text" placeholder="Número de Placa (ej: XYZ-123)" class="p-4 bg-slate-800 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 shadow-inner text-white uppercase">
+            <button onclick="registrarRepartidor()" class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all">
+                VINCULAR REPARTIDOR ➕
             </button>
         </div>
+
+        <div id="lista-repartidores" class="mt-6 grid gap-2">
+            </div>
     </section>
 
-    <section class="bg-white p-6 rounded-[2.5rem] shadow-xl">
-        <h2 class="text-lg font-black mb-6 flex items-center gap-2 text-gray-800">
-            <i class="fas fa-utensils text-orange-500"></i> PLATOS ACTIVOS
+    <section class="bg-white p-6 rounded-[2.5rem] shadow-xl mb-8 border-t-8 border-orange-500">
+        <h2 class="text-lg font-black mb-4 flex items-center gap-2">
+            <i class="fas fa-hamburger text-orange-500"></i> AGREGAR PLATO
         </h2>
-        <div id="lista-admin" class="grid gap-3 text-sm">
-            <p class="text-center text-gray-300 py-10 italic">Sincronizando con la nube...</p>
+        <div class="grid gap-3">
+            <input id="prod-nombre" type="text" placeholder="Nombre del plato" class="p-4 bg-gray-50 rounded-2xl outline-none border border-gray-100">
+            <input id="prod-precio" type="number" placeholder="Precio" class="p-4 bg-gray-50 rounded-2xl outline-none border border-gray-100">
+            <div class="flex gap-2">
+                <select id="prod-restaurante" class="flex-1 p-4 bg-gray-50 rounded-2xl border border-gray-100 font-bold"></select>
+                <button onclick="agregarNuevoRestaurante()" class="bg-orange-100 p-4 rounded-2xl text-orange-600"><i class="fas fa-store"></i></button>
+            </div>
+            <button onclick="guardarProducto()" class="bg-orange-600 text-white font-black py-4 rounded-2xl shadow-lg">GUARDAR PLATO ✅</button>
         </div>
     </section>
 
@@ -74,95 +71,70 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // --- GESTIÓN DE RESTAURANTES ---
-        window.agregarNuevoRestaurante = function() {
-            const nuevoRest = prompt("Escribe el nombre del nuevo restaurante de Caucasia:");
-            if (nuevoRest && nuevoRest.trim() !== "") {
-                const restRef = ref(db, 'config/restaurantes');
-                push(restRef, nuevoRest.trim()).then(() => {
-                    alert("¡Zuass! '" + nuevoRest + "' ahora está en la lista.");
+        // --- LÓGICA DE REPARTIDORES ---
+        window.registrarRepartidor = function() {
+            const nombre = document.getElementById('rep-nombre').value;
+            const placa = document.getElementById('rep-placa').value;
+            if(nombre && placa) {
+                const repRef = ref(db, 'config/repartidores');
+                push(repRef, { nombre, placa }).then(() => {
+                    document.getElementById('rep-nombre').value = "";
+                    document.getElementById('rep-placa').value = "";
+                    alert("¡Repartidor registrado en la red!");
                 });
             }
+        };
+
+        onValue(ref(db, 'config/repartidores'), (snapshot) => {
+            const listado = document.getElementById('lista-repartidores');
+            listado.innerHTML = "";
+            const data = snapshot.val();
+            for(let id in data) {
+                listado.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-800 p-3 rounded-xl border border-slate-700">
+                        <div class="text-sm">
+                            <p class="font-bold text-blue-400">${data[id].nombre}</p>
+                            <p class="text-[10px] opacity-60">Placa: ${data[id].placa}</p>
+                        </div>
+                        <button onclick="borrarRep('${id}')" class="text-red-400 px-2"><i class="fas fa-times"></i></button>
+                    </div>`;
+            }
+        });
+
+        window.borrarRep = (id) => remove(ref(db, `config/repartidores/${id}`));
+
+        // --- (Aquí sigue tu lógica de restaurantes y productos que ya teníamos) ---
+        window.agregarNuevoRestaurante = function() {
+            const nuevoRest = prompt("Nombre del restaurante:");
+            if (nuevoRest) push(ref(db, 'config/restaurantes'), nuevoRest);
         };
 
         onValue(ref(db, 'config/restaurantes'), (snapshot) => {
             const select = document.getElementById('prod-restaurante');
             select.innerHTML = "";
             const data = snapshot.val();
-            
-            if (!data) {
-                let opt = document.createElement('option');
-                opt.text = "Restaurante Central";
-                select.add(opt);
-                return;
-            }
-
             for (let id in data) {
-                let option = document.createElement('option');
-                option.value = data[id];
-                option.text = data[id];
-                select.add(option);
+                let opt = document.createElement('option');
+                opt.value = data[id]; opt.text = data[id];
+                select.add(opt);
             }
         });
 
-        // --- GESTIÓN DE PRODUCTOS ---
         window.guardarProducto = function() {
             const nombre = document.getElementById('prod-nombre').value;
             const precio = document.getElementById('prod-precio').value;
-            const desc = document.getElementById('prod-desc').value;
             const rest = document.getElementById('prod-restaurante').value;
-
             if(nombre && precio) {
-                const prodRef = ref(db, 'productos');
-                const nuevoProdRef = push(prodRef);
-                set(nuevoProdRef, { nombre, precio, desc, rest })
-                .then(() => {
+                push(ref(db, 'productos'), { nombre, precio, rest }).then(() => {
                     document.getElementById('prod-nombre').value = "";
                     document.getElementById('prod-precio').value = "";
-                    document.getElementById('prod-desc').value = "";
                 });
-            } else {
-                alert("Pon al menos el nombre y el precio, Harold.");
-            }
-        };
-
-        onValue(ref(db, 'productos'), (snapshot) => {
-            const data = snapshot.val();
-            const listado = document.getElementById('lista-admin');
-            listado.innerHTML = "";
-            
-            if (!data) {
-                listado.innerHTML = "<p class='text-center text-gray-400 py-6 italic'>No hay platos en el menú.</p>";
-                return;
-            }
-
-            for(let id in data) {
-                listado.innerHTML += `
-                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-3xl border border-gray-100">
-                        <div>
-                            <p class="font-black text-gray-800 uppercase text-[11px] tracking-tighter">${data[id].nombre}</p>
-                            <p class="text-orange-600 font-black text-lg">$${data[id].precio}</p>
-                            <p class="text-[9px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full inline-block font-bold mt-1">${data[id].rest}</p>
-                        </div>
-                        <button onclick="window.borrar('${id}')" class="bg-red-100 text-red-500 h-10 w-10 rounded-2xl flex items-center justify-center active:scale-90 transition-all">
-                            <i class="fas fa-trash-alt text-sm"></i>
-                        </button>
-                    </div>
-                `;
-            }
-        });
-
-        window.borrar = (id) => {
-            if(confirm("¿Seguro que quieres eliminar este plato de la app?")) {
-                remove(ref(db, `productos/${id}`));
             }
         };
     </script>
 
-    <footer class="mt-12 text-center">
-        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-[0.3em]">
-            App desarrollada por Vibras Positivas derechos de autor (3117700431)
-        </p>
+    <footer class="mt-10 text-center text-[9px] text-gray-400 font-bold uppercase tracking-widest">
+        App desarrollada por Vibras Positivas derechos de autor (3117700431)
     </footer>
 </body>
 </html>
