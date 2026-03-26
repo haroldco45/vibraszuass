@@ -3,39 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibras Zuass! | Cliente Pro</title>
+    <title>Vibras Zuass! | Menú Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 pb-32 text-gray-800">
+<body class="bg-gray-100 pb-40 text-gray-800">
 
-    <header class="p-4 bg-white shadow-sm flex justify-between items-center sticky top-0 z-50">
+    <header class="p-4 bg-white shadow-md flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-orange-500 font-black text-2xl italic">Vibras Zuass!</h1>
-        <div class="relative">
-            <span id="contador" class="bg-orange-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">0</span>
-        </div>
+        <div class="bg-orange-500 text-white h-10 w-10 rounded-full flex items-center justify-center shadow-lg font-black" id="contador">0</div>
     </header>
 
-    <main class="p-4">
-        <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6 border-b-4 border-orange-500">
-            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Tus Datos</h2>
-            <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-orange-500 shadow-inner font-bold">
+    <main class="p-4 max-w-md mx-auto">
+        <div class="bg-white p-6 rounded-[2.5rem] shadow-sm mb-6 border-b-4 border-orange-500">
+            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">Tus Datos de Entrega</h2>
+            <input id="nombre-cliente" type="text" placeholder="¿A nombre de quién?" 
+                class="w-full p-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-orange-500 shadow-inner font-bold text-lg">
         </div>
 
-        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Menú de hoy:</h2>
+        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 ml-2 italic">Lo más rico de Caucasia:</h2>
         
         <div id="lista-productos" class="grid gap-4">
-            <p class="text-center text-gray-400 py-10 italic">Zuass... cargando sabores...</p>
+            <div class="text-center py-20 opacity-20">
+                <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                <p>Zuass... cargando sabores...</p>
+            </div>
         </div>
     </main>
 
-    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-lg hidden border-t border-gray-100 shadow-2xl z-50 rounded-t-[2rem]">
-        <div class="flex justify-between items-center mb-4 px-4">
-            <span class="font-bold text-gray-400">Total Pedido:</span>
+    <div id="btn-pedir" class="fixed bottom-0 w-full p-6 bg-white/90 backdrop-blur-xl hidden border-t border-gray-100 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 rounded-t-[3rem]">
+        <div class="flex justify-between items-center mb-5 px-2">
+            <span class="font-bold text-gray-400 uppercase text-xs tracking-widest">Total Pedido:</span>
             <span id="total-precio" class="text-3xl font-black text-orange-600">$0</span>
         </div>
-        <button onclick="lanzarPedido()" class="w-full bg-green-600 hover:bg-green-500 text-white py-5 rounded-2xl font-black text-xl shadow-xl active:scale-95 transition-all">
-            PEDIR POR WHATSAPP ✅
+        <button onclick="lanzarPedido()" class="w-full bg-green-600 hover:bg-green-500 text-white py-5 rounded-2xl font-black text-xl shadow-xl shadow-green-100 active:scale-95 transition-all flex items-center justify-center gap-2">
+            PEDIR AHORA <i class="fab fa-whatsapp text-2xl"></i>
         </button>
     </div>
 
@@ -56,38 +59,38 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // CARGAR PRODUCTOS CON SELECTOR DE CANTIDAD
+        // 1. CARGAR PRODUCTOS DESDE EL ADMIN
         onValue(ref(db, 'productos'), (snapshot) => {
             const productos = snapshot.val();
             const contenedor = document.getElementById('lista-productos');
             contenedor.innerHTML = ""; 
 
             if (!productos) {
-                contenedor.innerHTML = "<p class='text-center'>No hay platos disponibles.</p>";
+                contenedor.innerHTML = "<p class='text-center py-10 opacity-30'>No hay platos activos.</p>";
                 return;
             }
 
             for (let id in productos) {
                 const p = productos[id];
                 contenedor.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-50 flex flex-col gap-4">
+                    <div class="bg-white p-5 rounded-[2.5rem] shadow-sm border border-gray-50 flex flex-col gap-4 transition-all hover:shadow-md">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
-                                <h3 class="font-black text-xl leading-tight">${p.nombre}</h3>
-                                <p class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mb-1">${p.rest}</p>
-                                <p class="text-orange-600 font-black text-2xl">$${p.precio}</p>
+                                <h3 class="font-black text-xl leading-tight uppercase text-gray-700">${p.nombre}</h3>
+                                <p class="text-[9px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full inline-block font-black mt-1 mb-1">${p.rest}</p>
+                                <p class="text-orange-600 font-black text-2xl block">$${p.precio}</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-2xl">
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs font-bold text-gray-400 ml-2">CANTIDAD:</span>
+                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-black text-gray-400 ml-2">UNIDADES:</span>
                                 <input type="number" id="cant-${id}" value="1" min="1" max="20" 
-                                    class="w-16 p-2 bg-white border-none rounded-xl font-black text-center text-orange-600 shadow-sm outline-none">
+                                    class="w-14 p-2 bg-white border-none rounded-xl font-black text-center text-orange-600 shadow-sm outline-none">
                             </div>
                             <button onclick="agregarLocal('${id}', '${p.nombre}', ${p.precio})" 
-                                class="bg-orange-500 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-orange-100 active:scale-90 transition-all">
-                                AGREGAR
+                                class="bg-orange-500 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-orange-100 active:scale-90 transition-all text-sm">
+                                AGREGAR +
                             </button>
                         </div>
                     </div>
@@ -95,10 +98,10 @@
             }
         });
 
-        // FUNCIÓN PARA ENVIAR CON GPS Y UNIDADES
+        // 2. LANZAR EL PEDIDO (FIREBASE + GPS + WHATSAPP)
         window.lanzarPedido = function() {
             const nom = document.getElementById('nombre-cliente').value;
-            if(!nom) return alert("Vecino, dinos tu nombre.");
+            if(!nom) return alert("¡Zuass! Dinos tu nombre para el pedido.");
 
             navigator.geolocation.getCurrentPosition((pos) => {
                 const lat = pos.coords.latitude;
@@ -113,16 +116,21 @@
                     fecha: new Date().toLocaleTimeString(),
                     coords: { lat, lng }
                 }).then(() => {
+                    // Mensaje de WhatsApp elegante
                     let msg = `*Vibras Zuass!*%0ACliente: ${nom}%0A%0A`;
                     window.carrito.forEach(i => {
                         msg += `*${i.cantidad}x* ${i.nombre} - $${i.subtotal}%0A`;
                     });
-                    msg += `%0A*TOTAL A PAGAR: $${window.total}*%0A📍 Ubicación: http://maps.google.com/maps?q=${lat},${lng}`;
+                    msg += `%0A*TOTAL A PAGAR: $${window.total}*%0A📍 Mi ubicación: http://googleusercontent.com/maps.google.com/5{lat},${lng}`;
+                    
                     window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
+
+                    // LIMPIAR DESPUÉS DE PEDIR
+                    window.limpiarTodo(); 
                 });
 
             }, (error) => {
-                alert("Por favor activa el GPS para que el domiciliario llegue rápido.");
+                alert("Activa el GPS para que el repartidor llegue a tu casa en Caucasia.");
             });
         };
     </script>
@@ -144,16 +152,23 @@
 
             window.total += subtotal;
             
+            // Actualizar Interfaz
             document.getElementById('contador').innerText = window.carrito.length;
             document.getElementById('total-precio').innerText = `$${window.total}`;
             document.getElementById('btn-pedir').classList.remove('hidden');
-            
-            // Efecto visual de "agregado"
-            alert(`¡Zuass! Agregaste ${unidades} ${nombre}`);
+        };
+
+        window.limpiarTodo = function() {
+            window.carrito = [];
+            window.total = 0;
+            document.getElementById('contador').innerText = "0";
+            document.getElementById('total-precio').innerText = "$0";
+            document.getElementById('btn-pedir').classList.add('hidden');
+            console.log("Sistema Zuass! reseteado con éxito.");
         };
     </script>
 
-    <footer class="mt-10 text-center text-[10px] text-gray-400 p-8 font-bold uppercase tracking-widest">
+    <footer class="mt-10 text-center text-[10px] text-gray-400 p-10 font-black uppercase tracking-[0.3em] italic">
         App desarrollada por Vibras Positivas derechos de autor (3117700431)
     </footer>
 </body>
