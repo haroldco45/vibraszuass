@@ -14,8 +14,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ESTA FUNCIÓN ES LA QUE CAPTURA EL GPS Y ENVÍA TODO
-window.enviarPedidoZuass = function(carrito, total, nombre) {
+// ESTA FUNCIÓN ES EL MOTOR DE VIBRAS ZUASS
+window.lanzarPedido = function() {
+    const nombre = document.getElementById('nombre-cliente').value;
+    if (!nombre) return alert("¡Zuass! Vecino, dinos tu nombre para el pedido.");
+    
     // 1. Intentar capturar el GPS
     navigator.geolocation.getCurrentPosition((pos) => {
         const coords = {
@@ -23,29 +26,29 @@ window.enviarPedidoZuass = function(carrito, total, nombre) {
             lng: pos.coords.longitude
         };
 
-        // 2. Guardar en Firebase con las coordenadas
+        // 2. Guardar en Firebase
         const pedidosRef = ref(db, 'pedidos');
         const nuevoPedidoRef = push(pedidosRef);
         
         set(nuevoPedidoRef, {
             cliente: nombre,
-            items: carrito,
-            total: total,
+            items: window.carrito, // Lee el carrito global del index.html
+            total: window.total,     // Lee el total global del index.html
             estado: "pendiente",
             fecha: new Date().toLocaleTimeString(),
-            coords: coords // <--- AQUÍ VA EL GPS PARA EL DOMICILIARIO
+            coords: coords 
         }).then(() => {
-            // 3. Abrir WhatsApp con el link de ubicación
+            // 3. WhatsApp con link real de Google Maps
             let msg = `*Vibras Zuass!*%0ANuevo Pedido de ${nombre}:%0A`;
-            carrito.forEach(i => msg += `- ${i.nombre}%0A`);
-            msg += `%0A*Total: $${total}*%0A📍 Mi ubicación: https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+            window.carrito.forEach(i => msg += `- ${i.nombre}%0A`);
+            msg += `%0A*Total: $${window.total}*%0A📍 Mi ubicación: https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+            
             window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
         });
 
     }, (error) => {
-        // Si el cliente no acepta el GPS, le avisamos:
-        alert("¡Zuass! Vecino, para que el domiciliario llegue rápido, necesitamos que aceptes el permiso de GPS.");
+        alert("¡Zuass! Necesitamos el GPS activo para que el repartidor llegue a tu casa en Caucasia.");
     });
 };
 
-console.log("Cerebro Zuass! cargado con GPS");
+console.log("Cerebro Zuass! con GPS cargado y listo.");
