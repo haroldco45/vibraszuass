@@ -1,54 +1,51 @@
-// Configuración de Firebase para Vibras Zuass
-const firebaseConfig = {
-  apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
-  authDomain: "vibraszuass.firebaseapp.com",
-  projectId: "vibraszuass",
-  storageBucket: "vibraszuass.firebasestorage.app",
-  messagingSenderId: "441433261428",
-  appId: "1:441433261428:web:f418c47d4352cb28a59821",
-  databaseURL: "https://vibraszuass-default-rtdb.firebaseio.com"
-};
-
-// Importar Firebase (Versión Web Estándar)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, push, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBa3WgBBS0ES3HCMHXebTDNPprGZmePi70",
+    authDomain: "vibraszuass.firebaseapp.com",
+    projectId: "vibraszuass",
+    storageBucket: "vibraszuass.firebasestorage.app",
+    messagingSenderId: "441433261428",
+    appId: "1:441433261428:web:f418c47d4352cb28a59821",
+    databaseURL: "https://vibraszuass-default-rtdb.firebaseio.com"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// EXPORTAR FUNCIONES AL WINDOW PARA QUE FUNCIONEN EN HTML
-window.enviarPedidoZuass = function(carrito, total) {
-    const pedidosRef = ref(db, 'pedidos');
-    const nuevoPedidoRef = push(pedidosRef);
-    
-    const datosPedido = {
-        items: carrito,
-        total: total,
-        estado: "pendiente",
-        fecha: new Date().toLocaleTimeString(),
-        cliente: "Cliente Caucasia" // Aquí podrías pedir el nombre en un input
-    };
+// ESTA FUNCIÓN ES LA QUE CAPTURA EL GPS Y ENVÍA TODO
+window.enviarPedidoZuass = function(carrito, total, nombre) {
+    // 1. Intentar capturar el GPS
+    navigator.geolocation.getCurrentPosition((pos) => {
+        const coords = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+        };
 
-    set(nuevoPedidoRef, datosPedido).then(() => {
-        // Formar mensaje para WhatsApp
-        let msg = `*Vibras Zuass!*%0ANuevo Pedido:%0A`;
-        carrito.forEach(i => msg += `- ${i.nombre}%0A`);
-        msg += `*Total: $${total}*`;
-        window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
+        // 2. Guardar en Firebase con las coordenadas
+        const pedidosRef = ref(db, 'pedidos');
+        const nuevoPedidoRef = push(pedidosRef);
+        
+        set(nuevoPedidoRef, {
+            cliente: nombre,
+            items: carrito,
+            total: total,
+            estado: "pendiente",
+            fecha: new Date().toLocaleTimeString(),
+            coords: coords // <--- AQUÍ VA EL GPS PARA EL DOMICILIARIO
+        }).then(() => {
+            // 3. Abrir WhatsApp con el link de ubicación
+            let msg = `*Vibras Zuass!*%0ANuevo Pedido de ${nombre}:%0A`;
+            carrito.forEach(i => msg += `- ${i.nombre}%0A`);
+            msg += `%0A*Total: $${total}*%0A📍 Mi ubicación: https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
+            window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
+        });
+
+    }, (error) => {
+        // Si el cliente no acepta el GPS, le avisamos:
+        alert("¡Zuass! Vecino, para que el domiciliario llegue rápido, necesitamos que aceptes el permiso de GPS.");
     });
 };
 
-// Función para el Restaurante: Escuchar pedidos
-window.escucharPedidos = function(callback) {
-    const pedidosRef = ref(db, 'pedidos');
-    onValue(pedidosRef, (snapshot) => {
-        const data = snapshot.val();
-        callback(data);
-    });
-};
-
-// Función para cambiar estado (Aceptar/Entregar)
-window.cambiarEstadoPedido = function(id, nuevoEstado) {
-    const pedidoRef = ref(db, `pedidos/${id}`);
-    update(pedidoRef, { estado: nuevoEstado });
-};
+console.log("Cerebro Zuass! cargado con GPS");
