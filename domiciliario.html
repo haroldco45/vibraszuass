@@ -3,27 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zuass! Reparto | Domiciliarios</title>
+    <title>Zuass! Reparto | Panel Domiciliarios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .card-glow { box-shadow: 0 0 20px rgba(249, 115, 22, 0.1); }
-        body { background-color: #0f172a; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; }
+        .bloqueo-reparto {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 30px;
+        }
     </style>
 </head>
 <body class="text-slate-200 pb-24">
+
+    <div id="bloqueo-repartidor" class="bloqueo-reparto hidden">
+        <div class="bg-slate-800 p-8 rounded-[3rem] border-b-8 border-red-500 shadow-2xl">
+            <i class="fas fa-hand-holding-dollar text-red-500 text-6xl mb-6"></i>
+            <h1 class="text-white font-black text-3xl mb-2 italic">CUPO INACTIVO</h1>
+            <p class="text-slate-400 mb-8 font-bold text-sm leading-relaxed uppercase tracking-widest">
+                Tu acceso al sistema de repartos está suspendido.<br>Contacta a la central Zuass!
+            </p>
+            <a href="https://wa.me/573117700431" class="bg-green-600 block w-full py-5 rounded-2xl font-black text-lg shadow-lg">
+                PAGAR MI CUPO AQUÍ
+            </a>
+        </div>
+    </div>
 
     <header class="p-5 bg-orange-600 shadow-2xl flex justify-between items-center sticky top-0 z-50">
         <div>
             <h1 class="font-black text-xl italic tracking-tighter text-white">
                 <i class="fas fa-motorcycle mr-2"></i>ZUASS! REPARTO
             </h1>
-            <p class="text-[10px] text-orange-200 font-bold uppercase tracking-widest">Panel de Entrega | Caucasia</p>
+            <p id="info-repartidor" class="text-[9px] text-orange-200 font-bold uppercase tracking-widest mt-0.5 italic">Verificando Placa...</p>
         </div>
-        <div class="bg-black/20 p-2 rounded-xl text-center min-w-[60px]">
-            <span id="count-reparto" class="block text-lg font-black leading-none">0</span>
-            <span class="text-[8px] uppercase font-bold opacity-60">Viajes</span>
-        </div>
+        <div class="bg-black/20 px-3 py-1 rounded-full text-[10px] font-black" id="status-chip">...</div>
     </header>
 
     <main class="p-4">
@@ -32,13 +48,13 @@
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
             </span>
-            <h2 class="text-slate-400 font-bold text-xs uppercase tracking-widest">Pedidos para despachar:</h2>
+            <h2 class="text-slate-400 font-bold text-xs uppercase tracking-widest italic">Rutas listas para Caucasia:</h2>
         </div>
         
         <div id="lista-reparto" class="grid gap-6">
             <div class="text-center py-20 opacity-20">
                 <i class="fas fa-circle-notch fa-spin text-4xl mb-4"></i>
-                <p>Sincronizando con la cocina...</p>
+                <p>Zuass... esperando despacho de cocina...</p>
             </div>
         </div>
     </main>
@@ -60,117 +76,99 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // ESCUCHAR PEDIDOS QUE ESTÉN EN PREPARACIÓN O LISTOS
+        // --- VALIDACIÓN INVISIBLE DE REPARTIDOR ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const idRepartidor = urlParams.get('id'); // Cada domiciliario tiene su link: domiciliario.html?id=ID_REPARTIDOR
+
+        onValue(ref(db, `config/repartidores/${idRepartidor}`), (snapshot) => {
+            const rep = snapshot.val();
+            const bloqueo = document.getElementById('bloqueo-repartidor');
+            const info = document.getElementById('info-repartidor');
+            const chip = document.getElementById('status-chip');
+
+            if (!rep || rep.estado !== 'activo') {
+                bloqueo.classList.remove('hidden'); // CIERRE TOTAL
+                chip.innerText = "BLOQUEADO";
+            } else {
+                bloqueo.classList.add('hidden'); // ACCESO TOTAL
+                info.innerText = `${rep.nombre} | PLACA: ${rep.placa}`;
+                chip.innerText = "ACTIVO";
+                chip.classList.add('text-green-400');
+            }
+        });
+
+        // --- CARGAR PEDIDOS DISPONIBLES (SOLO ESTADO 'PREPARANDO') ---
         onValue(ref(db, 'pedidos'), (snapshot) => {
             const pedidos = snapshot.val();
             const contenedor = document.getElementById('lista-reparto');
-            const contador = document.getElementById('count-reparto');
             contenedor.innerHTML = "";
+            let hayPedidos = false;
 
-            let totalActivos = 0;
-
-            if (!pedidos) {
-                mostrarVacio(contenedor);
-                contador.innerText = "0";
-                return;
-            }
+            if (!pedidos) { mostrarVacio(contenedor); return; }
 
             for (let id in pedidos) {
                 const p = pedidos[id];
-                
-                // Solo mostrar si el restaurante ya lo aceptó ("preparando")
                 if (p.estado === "preparando" || p.estado === "listo") {
-                    totalActivos++;
-                    
-                    // Crear lista de productos
-                    const itemsText = p.items.map(i => i.nombre).join(", ");
+                    hayPedidos = true;
+                    const itemsLista = p.items.map(i => `• ${i.cantidad}x ${i.nombre}`).join("<br>");
 
                     contenedor.innerHTML += `
-                        <div class="bg-slate-800/50 rounded-[2.5rem] p-6 border border-slate-700/50 card-glow relative overflow-hidden backdrop-blur-sm">
-                            <div class="absolute top-0 right-0 bg-green-500 text-black font-black text-[9px] px-4 py-1.5 rounded-bl-2xl shadow-lg">
-                                LISTO PARA SALIR
-                            </div>
+                        <div class="bg-slate-800 rounded-[2.5rem] p-6 border-l-4 border-blue-500 shadow-2xl relative overflow-hidden">
+                            <div class="absolute top-0 right-0 bg-blue-600 text-white font-black text-[9px] px-4 py-1.5 rounded-bl-2xl">DOMICILIO</div>
                             
-                            <div class="mb-4">
-                                <h3 class="text-2xl font-black text-white mb-1 uppercase tracking-tight">${p.cliente}</h3>
-                                <div class="flex items-center gap-3 text-slate-400 text-[11px] font-bold italic">
-                                    <span><i class="far fa-clock mr-1 text-orange-500"></i> ${p.fecha}</span>
-                                    <span><i class="fas fa-shopping-bag mr-1 text-orange-500"></i> ${p.items.length} productos</span>
-                                </div>
+                            <h3 class="text-2xl font-black text-orange-500 mb-1 uppercase tracking-tighter">${p.cliente}</h3>
+                            <p class="text-[10px] text-slate-500 font-bold mb-4 italic italic">${p.fecha}</p>
+                            
+                            <div class="bg-slate-900/50 p-4 rounded-2xl mb-5 border border-slate-700/30">
+                                <p class="text-[9px] text-slate-500 uppercase font-black mb-1">Items en maleta:</p>
+                                <p class="text-xs text-slate-300 font-bold leading-relaxed">${itemsLista}</p>
                             </div>
 
-                            <p class="text-slate-300 text-xs mb-5 line-clamp-2 bg-slate-900/50 p-3 rounded-xl border border-slate-700/30">
-                                <span class="text-orange-500 font-bold uppercase text-[9px] block mb-1">Pedido:</span>
-                                ${itemsText}
-                            </p>
-                            
-                            <div class="flex items-end justify-between mb-6">
-                                <div>
-                                    <p class="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Cobro Total:</p>
-                                    <p class="text-3xl font-black text-green-400 leading-none">$${p.total}</p>
-                                </div>
-                                <i class="fas fa-hand-holding-dollar text-slate-700 text-3xl"></i>
+                            <div class="flex items-center justify-between mb-6 px-2">
+                                <span class="text-xs font-bold text-slate-500 uppercase">Cobrar:</span>
+                                <span class="text-3xl font-black text-white leading-none">$${p.total}</span>
                             </div>
 
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-3">
                                 <button onclick="window.abrirRuta(${p.coords?.lat}, ${p.coords?.lng})" 
-                                        class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-blue-900/20 active:scale-95 transition-all">
+                                        class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 shadow-lg shadow-blue-900/20">
                                     <i class="fas fa-location-arrow text-xl"></i>
-                                    <span class="text-[9px] uppercase tracking-wider">Ver Ruta GPS</span>
+                                    <span class="text-[8px] uppercase tracking-widest">VER GPS</span>
                                 </button>
                                 
                                 <button onclick="window.finalizarEntrega('${id}')" 
-                                        class="bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 shadow-lg shadow-green-900/20 active:scale-95 transition-all">
-                                    <i class="fas fa-check-double text-xl"></i>
-                                    <span class="text-[9px] uppercase tracking-wider">Entregado</span>
+                                        class="bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all active:scale-95 shadow-lg shadow-green-900/20">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                    <span class="text-[8px] uppercase tracking-widest">ENTREGADO</span>
                                 </button>
                             </div>
                         </div>
                     `;
                 }
             }
-
-            contador.innerText = totalActivos;
-            if (totalActivos === 0) mostrarVacio(contenedor);
+            if (!hayPedidos) mostrarVacio(contenedor);
         });
 
-        function mostrarVacio(contenedor) {
-            contenedor.innerHTML = `
-                <div class="text-center py-20 opacity-20">
-                    <i class="fas fa-box-open text-6xl mb-4"></i>
-                    <p class="font-bold text-sm">¡Zuass! No tienes viajes pendientes.</p>
-                </div>`;
+        function mostrarVacio(div) {
+            div.innerHTML = `<div class="text-center py-20 opacity-20"><i class="fas fa-motorcycle text-6xl mb-4"></i><p>Todo entregado. ¡Zuass!</p></div>`;
         }
 
-        // FUNCIONES DE CONTROL
         window.abrirRuta = (lat, lng) => {
-            if(!lat || !lng) {
-                return alert("¡Uy! El cliente no activó su GPS. Llama al restaurante para la dirección.");
-            }
-            // Link Profesional de Google Maps
+            if(!lat || !lng) return alert("¡Uy! El cliente no mandó ubicación. Llama a la cocina.");
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
         };
 
         window.finalizarEntrega = (id) => {
-            if(confirm("¿Ya entregaste el pedido y recibiste el pago?")) {
-                update(ref(db, `pedidos/${id}`), { 
-                    estado: "entregado" 
-                }).then(() => {
-                    alert("¡Excelente trabajo! Pedido finalizado.");
-                });
+            if(confirm("¿Recibiste el dinero y entregaste el pedido?")) {
+                update(ref(db, `pedidos/${id}`), { estado: "entregado" });
             }
         };
     </script>
 
-    <footer class="mt-10 text-center p-8 border-t border-slate-800">
-        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-[0.3em] mb-2">
-            App desarrollada por Vibras Positivas derechos de autor (3117700431)
+    <footer class="mt-20 text-center p-6 border-t border-slate-800">
+        <p class="text-[8px] text-slate-600 font-black uppercase tracking-[0.4em] mb-2 italic">
+            App desarrollada por Vibras Positivas (3117700431)
         </p>
-        <div class="flex justify-center gap-4 opacity-30">
-            <i class="fas fa-shield-alt text-xs"></i>
-            <i class="fas fa-bolt text-xs text-orange-500"></i>
-            <i class="fas fa-map-marker-alt text-xs"></i>
-        </div>
     </footer>
 </body>
 </html>
