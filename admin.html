@@ -2,31 +2,51 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin | Vibras Zuass!</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 p-6">
-    <h1 class="text-3xl font-black text-orange-600 mb-6">Panel Maestro Zuass!</h1>
+<body class="bg-gray-100 p-4 pb-20">
 
-    <div class="bg-white p-6 rounded-3xl shadow-xl mb-8 border-t-8 border-orange-500">
-        <h2 class="text-xl font-bold mb-4">➕ Agregar Nuevo Plato</h2>
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-black text-orange-600 italic">PANEL MAESTRO <span class="text-gray-800 text-sm block">Vibras Zuass!</span></h1>
+        <div class="bg-orange-100 p-2 rounded-full text-orange-600">
+            <i class="fas fa-user-shield text-xl"></i>
+        </div>
+    </header>
+
+    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl mb-8 border-t-8 border-orange-500">
+        <h2 class="text-lg font-black mb-4 flex items-center gap-2">
+            <i class="fas fa-plus-circle text-orange-500"></i> AGREGAR NUEVO PLATO
+        </h2>
+        
         <div class="grid gap-4">
-            <input id="prod-nombre" type="text" placeholder="Nombre del plato (ej: Picada)" class="p-3 border rounded-xl outline-none">
-            <input id="prod-precio" type="number" placeholder="Precio (solo números)" class="p-3 border rounded-xl outline-none">
-            <input id="prod-desc" type="text" placeholder="Descripción breve" class="p-3 border rounded-xl outline-none">
-            <select id="prod-restaurante" class="p-3 border rounded-xl outline-none bg-white">
-                <option value="Restaurante Central">Restaurante Central</option>
-                <option value="Pizzería Zuass">Pizzería Zuass</option>
-            </select>
-            <button onclick="guardarProducto()" class="bg-orange-600 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-all">
+            <input id="prod-nombre" type="text" placeholder="Nombre del plato (ej: Picada)" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner">
+            <input id="prod-precio" type="number" placeholder="Precio (solo números)" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner">
+            <input id="prod-desc" type="text" placeholder="Descripción breve" class="p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 transition-all shadow-inner">
+            
+            <div class="flex gap-2">
+                <select id="prod-restaurante" class="flex-1 p-4 bg-gray-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-orange-500 shadow-inner">
+                    <option value="Restaurante Central">Restaurante Central</option>
+                    <option value="Pizzería Zuass">Pizzería Zuass</option>
+                </select>
+                <button onclick="alert('Función para agregar restaurante próximamente')" class="bg-gray-200 p-4 rounded-2xl text-gray-500"><i class="fas fa-store"></i></button>
+            </div>
+
+            <button onclick="guardarProducto()" class="bg-orange-600 hover:bg-orange-500 text-white font-black py-5 rounded-2xl shadow-lg shadow-orange-200 active:scale-95 transition-all text-lg">
                 GUARDAR EN LA APP ✅
             </button>
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-3xl shadow-xl">
-        <h2 class="text-xl font-bold mb-4">📋 Platos en la App</h2>
-        <div id="lista-admin" class="grid gap-3"></div>
+    <div class="bg-white p-6 rounded-[2.5rem] shadow-xl">
+        <h2 class="text-lg font-black mb-4 flex items-center gap-2">
+            <i class="fas fa-list-ul text-orange-500"></i> PLATOS ACTIVOS EN LA APP
+        </h2>
+        <div id="lista-admin" class="grid gap-3">
+            <p class="text-center text-gray-400 py-10 italic">Cargando menú...</p>
+        </div>
     </div>
 
     <script type="module">
@@ -46,7 +66,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // FUNCIÓN PARA GUARDAR
+        // FUNCIÓN PARA GUARDAR SIN RECARGAR
         window.guardarProducto = function() {
             const nombre = document.getElementById('prod-nombre').value;
             const precio = document.getElementById('prod-precio').value;
@@ -56,32 +76,54 @@
             if(nombre && precio) {
                 const prodRef = ref(db, 'productos');
                 const nuevoProdRef = push(prodRef);
-                set(nuevoProdRef, { nombre, precio, desc, rest });
-                alert("¡Plato subido a Vibras Zuass!");
-                location.reload();
+                set(nuevoProdRef, { nombre, precio, desc, rest })
+                .then(() => {
+                    // Limpiar campos para el siguiente plato
+                    document.getElementById('prod-nombre').value = "";
+                    document.getElementById('prod-precio').value = "";
+                    document.getElementById('prod-desc').value = "";
+                    console.log("Producto guardado correctamente");
+                });
+            } else {
+                alert("Por favor pon al menos el nombre y el precio.");
             }
         };
 
-        // LISTAR Y ELIMINAR
+        // LISTAR EN TIEMPO REAL
         onValue(ref(db, 'productos'), (snapshot) => {
             const data = snapshot.val();
             const listado = document.getElementById('lista-admin');
             listado.innerHTML = "";
+            
+            if (!data) {
+                listado.innerHTML = "<p class='text-center text-gray-400 py-4'>No hay platos todavía.</p>";
+                return;
+            }
+
             for(let id in data) {
                 listado.innerHTML += `
-                    <div class="flex justify-between items-center p-3 border-b">
+                    <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
                         <div>
-                            <p class="font-bold">${data[id].nombre} - $${data[id].precio}</p>
-                            <p class="text-xs text-gray-500">${data[id].rest}</p>
+                            <p class="font-black text-gray-800">${data[id].nombre}</p>
+                            <p class="text-orange-600 font-bold text-sm">$${data[id].precio}</p>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">${data[id].rest}</p>
                         </div>
-                        <button onclick="borrar('${id}')" class="text-red-500 font-bold text-xs">ELIMINAR</button>
+                        <button onclick="borrar('${id}')" class="bg-red-50 text-red-500 h-10 w-10 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center justify-center">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 `;
             }
         });
-        window.borrar = (id) => remove(ref(db, `productos/${id}`));
+
+        window.borrar = (id) => {
+            if(confirm("¿Estás seguro de eliminar este plato?")) {
+                remove(ref(db, `productos/${id}`));
+            }
+        };
     </script>
-    <footer class="mt-10 text-center text-[10px] text-gray-400">
+
+    <footer class="mt-10 text-center text-[10px] text-gray-400 p-4">
         App desarrollada por Vibras Positivas derechos de autor (3117700431)
     </footer>
 </body>
