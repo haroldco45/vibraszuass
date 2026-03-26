@@ -1,1 +1,68 @@
+/* FUENTE Y SUAVIZADO */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
 
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-tap-highlight-color: transparent; /* Quita el cuadro azul al tocar en celular */
+}
+
+/* ANIMACIÓN DE ENTRADA DE PLATOS */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#lista-productos > div, #lista-reparto > div, #contenedor-pedidos > div {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* BOTONES ESTILO ZUASS! */
+.btn-zuass {
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-zuass:active {
+    transform: scale(0.92);
+}
+
+/* EFECTO DE CRISTAL (Glassmorphism) PARA EL CHECKOUT */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* DISEÑO DE LOS INPUTS */
+input, select {
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.1);
+}
+
+/* SCROLLBAR ESTILIZADO */
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #fb923c;
+    border-radius: 10px;
+}
+
+/* LOGO VIBRAS POSITIVAS (OPCIONAL) */
+.logo-vibras {
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
