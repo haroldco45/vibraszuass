@@ -3,32 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibras Zuass! | Menú en Vivo v3</title>
+    <title>Vibras Zuass! | Cliente Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-100 pb-24 text-gray-800">
+<body class="bg-gray-100 pb-32 text-gray-800">
+
     <header class="p-4 bg-white shadow-sm flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-orange-500 font-black text-2xl italic">Vibras Zuass!</h1>
-        <span id="contador" class="bg-orange-500 text-white px-3 py-1 rounded-full font-bold">0</span>
+        <div class="relative">
+            <span id="contador" class="bg-orange-500 text-white px-3 py-1 rounded-full font-bold shadow-lg">0</span>
+        </div>
     </header>
 
-    <div class="p-4">
-        <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl border-2 border-orange-200 mb-6 outline-none shadow-sm text-lg font-bold">
-        
-        <h2 class="text-gray-400 font-bold mb-4 uppercase text-[10px] tracking-widest">Menú del día en Caucasia:</h2>
+    <main class="p-4">
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6 border-b-4 border-orange-500">
+            <h2 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Tus Datos</h2>
+            <input id="nombre-cliente" type="text" placeholder="¿Cómo te llamas?" class="w-full p-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-orange-500 shadow-inner font-bold">
+        </div>
+
+        <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Menú de hoy:</h2>
         
         <div id="lista-productos" class="grid gap-4">
-            <p class="text-center text-gray-400 py-10 italic">Cargando sabores Zuass...</p>
+            <p class="text-center text-gray-400 py-10 italic">Zuass... cargando sabores...</p>
         </div>
-    </div>
+    </main>
 
-    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-md hidden border-t border-gray-200 shadow-2xl z-50">
-        <div class="flex justify-between items-center mb-4 px-2 font-bold text-xl">
-            <span>Total:</span>
-            <span id="total-precio" class="text-orange-600 font-black">$0</span>
+    <div id="btn-pedir" class="fixed bottom-0 w-full p-4 bg-white/90 backdrop-blur-lg hidden border-t border-gray-100 shadow-2xl z-50 rounded-t-[2rem]">
+        <div class="flex justify-between items-center mb-4 px-4">
+            <span class="font-bold text-gray-400">Total Pedido:</span>
+            <span id="total-precio" class="text-3xl font-black text-orange-600">$0</span>
         </div>
-        <button onclick="lanzarPedido()" class="w-full bg-green-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all">
-            PEDIR AHORA ✅
+        <button onclick="lanzarPedido()" class="w-full bg-green-600 hover:bg-green-500 text-white py-5 rounded-2xl font-black text-xl shadow-xl active:scale-95 transition-all">
+            PEDIR POR WHATSAPP ✅
         </button>
     </div>
 
@@ -49,36 +56,50 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // CARGAR PRODUCTOS
+        // CARGAR PRODUCTOS CON SELECTOR DE CANTIDAD
         onValue(ref(db, 'productos'), (snapshot) => {
             const productos = snapshot.val();
             const contenedor = document.getElementById('lista-productos');
             contenedor.innerHTML = ""; 
+
             if (!productos) {
-                contenedor.innerHTML = "<p class='text-center text-gray-400'>No hay platos todavía.</p>";
+                contenedor.innerHTML = "<p class='text-center'>No hay platos disponibles.</p>";
                 return;
             }
+
             for (let id in productos) {
                 const p = productos[id];
                 contenedor.innerHTML += `
-                    <div class="bg-white p-4 rounded-3xl shadow-sm border-l-8 border-orange-500 flex justify-between items-center">
-                        <div class="flex-1">
-                            <h3 class="font-bold text-lg">${p.nombre}</h3>
-                            <p class="text-[10px] text-blue-500 font-bold uppercase">${p.rest}</p>
-                            <p class="text-orange-600 font-black text-xl">$${p.precio}</p>
+                    <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-50 flex flex-col gap-4">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-black text-xl leading-tight">${p.nombre}</h3>
+                                <p class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mb-1">${p.rest}</p>
+                                <p class="text-orange-600 font-black text-2xl">$${p.precio}</p>
+                            </div>
                         </div>
-                        <button onclick="agregarLocal('${p.nombre}', ${p.precio})" class="bg-orange-500 text-white h-12 w-12 rounded-2xl font-black text-2xl shadow-lg active:scale-90 transition-all">+</button>
+
+                        <div class="flex items-center justify-between bg-gray-50 p-2 rounded-2xl">
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-bold text-gray-400 ml-2">CANTIDAD:</span>
+                                <input type="number" id="cant-${id}" value="1" min="1" max="20" 
+                                    class="w-16 p-2 bg-white border-none rounded-xl font-black text-center text-orange-600 shadow-sm outline-none">
+                            </div>
+                            <button onclick="agregarLocal('${id}', '${p.nombre}', ${p.precio})" 
+                                class="bg-orange-500 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-orange-100 active:scale-90 transition-all">
+                                AGREGAR
+                            </button>
+                        </div>
                     </div>
                 `;
             }
         });
 
-        // FUNCIÓN PARA ENVIAR A FIREBASE CON GPS
+        // FUNCIÓN PARA ENVIAR CON GPS Y UNIDADES
         window.lanzarPedido = function() {
             const nom = document.getElementById('nombre-cliente').value;
-            if(!nom) return alert("Vecino, dinos tu nombre para el pedido.");
+            if(!nom) return alert("Vecino, dinos tu nombre.");
 
-            // DISPARAR GPS
             navigator.geolocation.getCurrentPosition((pos) => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
@@ -90,16 +111,18 @@
                     total: window.total,
                     estado: "pendiente",
                     fecha: new Date().toLocaleTimeString(),
-                    coords: { lat, lng } // <--- COORDENADAS PARA EL DOMICILIARIO
+                    coords: { lat, lng }
                 }).then(() => {
                     let msg = `*Vibras Zuass!*%0ACliente: ${nom}%0A%0A`;
-                    window.carrito.forEach(i => msg += `- ${i.nombre}%0A`);
-                    msg += `%0A*Total: $${window.total}*%0A📍 Ubicación: http://google.com/maps?q=${lat},${lng}`;
+                    window.carrito.forEach(i => {
+                        msg += `*${i.cantidad}x* ${i.nombre} - $${i.subtotal}%0A`;
+                    });
+                    msg += `%0A*TOTAL A PAGAR: $${window.total}*%0A📍 Ubicación: http://maps.google.com/maps?q=${lat},${lng}`;
                     window.open(`https://wa.me/573117700431?text=${msg}`, '_blank');
                 });
 
             }, (error) => {
-                alert("Para que el domiciliario llegue rápido, por favor acepta el permiso de GPS.");
+                alert("Por favor activa el GPS para que el domiciliario llegue rápido.");
             });
         };
     </script>
@@ -108,16 +131,29 @@
         window.carrito = [];
         window.total = 0;
 
-        window.agregarLocal = function(nombre, precio) {
-            window.carrito.push({nombre, precio});
-            window.total += parseInt(precio);
+        window.agregarLocal = function(id, nombre, precio) {
+            const unidades = parseInt(document.getElementById(`cant-${id}`).value);
+            const subtotal = precio * unidades;
+
+            window.carrito.push({
+                nombre: nombre,
+                precio: precio,
+                cantidad: unidades,
+                subtotal: subtotal
+            });
+
+            window.total += subtotal;
+            
             document.getElementById('contador').innerText = window.carrito.length;
             document.getElementById('total-precio').innerText = `$${window.total}`;
             document.getElementById('btn-pedir').classList.remove('hidden');
+            
+            // Efecto visual de "agregado"
+            alert(`¡Zuass! Agregaste ${unidades} ${nombre}`);
         };
     </script>
 
-    <footer class="mt-20 text-center text-[10px] text-gray-400 p-4 font-bold">
+    <footer class="mt-10 text-center text-[10px] text-gray-400 p-8 font-bold uppercase tracking-widest">
         App desarrollada por Vibras Positivas derechos de autor (3117700431)
     </footer>
 </body>
